@@ -1,0 +1,61 @@
+name: asdo-phase0b
+
+services:
+  opa:
+    image: openpolicyagent/opa:1.19.1@sha256:378b7db7218985444b7bc14f0b0f5b05c864b9481fe470e133654a7fc084072c
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "--log-format=json", "/policies"]
+    healthcheck:
+      test: ["CMD", "/opa", "eval", "true"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    ports:
+      - "127.0.0.1:8181:8181"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    user: "65532:65532"
+    volumes:
+      - ./infra/opa:/policies:ro
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.159.0@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "components"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    ports:
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:13133:13133"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    user: "65532:65532"
+    volumes:
+      - ./infra/otel/collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+
+  postgres:
+    image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+    environment:
+      POSTGRES_DB: asdo
+      POSTGRES_INITDB_ARGS: --data-checksums
+      POSTGRES_PASSWORD: asdo-local-only
+      POSTGRES_USER: asdo_migrator
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asdo_migrator -d asdo"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    ports:
+      - "127.0.0.1:55432:5432"
+    shm_size: 256mb
+    volumes:
+      - asdo-postgres-data:/var/lib/postgresql
+
+volumes:
+  asdo-postgres-data:

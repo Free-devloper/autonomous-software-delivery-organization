@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:autonomous-sdo:contracts:v1:health-live-response",
+  "title": "HealthLiveResponse",
+  "description": "Stable process-liveness response for the version-one public API.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "service", "api_version"],
+  "properties": {
+    "status": {
+      "const": "ok"
+    },
+    "service": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 63,
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "api_version": {
+      "const": "v1"
+    }
+  }
+}

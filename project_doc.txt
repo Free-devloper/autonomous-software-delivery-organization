@@ -1,0 +1,671 @@
+You are the principal engineer responsible for building the “Autonomous Software Delivery Organization” platform described in the attached Software Requirements Specification.
+
+## 1. Objective
+
+Build a production-quality, end-to-end implementation of the attached SRS.
+
+Do not produce only:
+
+* A prototype
+* UI mockups
+* Static pages
+* Placeholder APIs
+* Pseudocode
+* An architecture document
+* Empty service scaffolding
+* Hardcoded demonstration data
+* Tests that do not execute real behavior
+
+The final repository must contain runnable software, automated tests, infrastructure definitions, security controls, deployment instructions, rollback instructions, operational documentation, and evidence that the implemented functionality works.
+
+## 2. Project parameters
+
+Use these values unless the existing repository or attached SRS explicitly requires otherwise:
+
+* Project name: Autonomous Software Delivery Organization
+* Repository mode: [NEW REPOSITORY / EXISTING REPOSITORY]
+* Deployment target: [LOCAL KUBERNETES / AWS EKS / GCP GKE / AZURE AKS / OTHER]
+* Source-control provider: [GITHUB / GITLAB / BOTH]
+* Primary cloud: [AWS / GCP / AZURE / CLOUD-NEUTRAL]
+* Initial environment: development, staging, production
+* Authentication: OIDC with Keycloak-compatible integration
+* Package manager: pnpm for JavaScript/TypeScript and uv for Python
+* License: Apache-2.0
+* Default model provider: configurable and provider-neutral
+* Target users: engineering organizations operating private repositories
+
+If one of these choices materially affects the architecture and cannot be inferred, ask me before implementing it. Otherwise, document your assumption and continue.
+
+## 3. Required technology direction
+
+Use an open-source-first, 2027-ready architecture.
+
+Do not invent unreleased package versions. At implementation time:
+
+1. Inspect available stable releases.
+2. Select mutually compatible maintained versions.
+3. Pin application dependencies using lockfiles.
+4. Pin production container images by digest.
+5. Record the chosen versions in `docs/compatibility-matrix.md`.
+6. Generate an SBOM for released containers.
+7. Document any non-open-source dependency and its open-source alternative.
+
+Use the following technology baseline:
+
+### Frontend
+
+* Next.js
+* React
+* TypeScript in strict mode
+* Monaco Editor
+* Tailwind CSS
+* TanStack Query
+* Server-Sent Events or an equally suitable mechanism for live run events
+* Playwright for browser testing
+* Vitest and React Testing Library for component tests
+
+### Backend
+
+* FastAPI
+* Python
+* Pydantic
+* SQLAlchemy
+* Alembic
+* OpenAPI 3.1
+* RFC 9457-compatible API errors
+
+### Agent and workflow orchestration
+
+* LangGraph for agent state graphs, checkpoints and human interrupts
+* Temporal for durable, long-running business workflows
+* Versioned, typed JSON contracts for every agent input and output
+* Provider-neutral model gateway
+* Configurable prompts stored as versioned templates
+* Deterministic code for authorization, approvals, state transitions and policy decisions
+
+### Code intelligence
+
+* tree-sitter
+* Language Server Protocol integrations
+* ripgrep
+* Symbol-aware chunking
+* Lexical, AST, symbol and vector hybrid search
+* PostgreSQL with pgvector for semantic search
+
+### Platform and data
+
+* PostgreSQL as the transactional source of truth
+* PostgreSQL row-level security for tenant isolation
+* Redis-compatible cache or Valkey
+* S3-compatible object storage
+* Kubernetes
+* Helm
+* Argo CD
+* OpenTelemetry
+* Prometheus
+* Grafana
+* Loki
+* Tempo
+
+### Sandboxing
+
+* Firecracker microVM support for untrusted repository execution
+* Rootless container fallback for approved lower-risk environments
+* Non-root users
+* Read-only root filesystem
+* Dropped Linux capabilities
+* seccomp and AppArmor profiles
+* Default-deny network access
+* Resource and execution time limits
+* No host Docker socket
+* No unrestricted host filesystem mounts
+
+### Security
+
+* Semgrep Community Edition
+* CodeQL where legally and operationally available
+* Gitleaks
+* Trivy
+* Syft
+* Grype
+* CycloneDX or SPDX SBOM
+* Cosign signatures and attestations
+* OPA-based deterministic policy enforcement
+* OpenBao or a Vault-compatible secrets interface
+
+## 4. Mandatory preliminary work
+
+Before implementing features:
+
+1. Read the complete attached SRS.
+2. Inspect the entire repository.
+3. Read all applicable `AGENTS.md`, README, contribution and configuration files.
+4. Identify existing code, tests, conventions and uncommitted changes.
+5. Do not overwrite unrelated user changes.
+6. Produce a repository assessment.
+7. Produce a requirement traceability matrix.
+8. Produce an implementation plan divided into independently testable milestones.
+9. Identify architectural risks and unresolved decisions.
+10. Record significant decisions in Architecture Decision Records.
+
+Create:
+
+* `docs/repository-assessment.md`
+* `docs/implementation-plan.md`
+* `docs/requirements-traceability.md`
+* `docs/risk-register.md`
+* `docs/compatibility-matrix.md`
+* `docs/adr/`
+* `docs/threat-model.md`
+
+Map every SRS requirement identifier to:
+
+* Planned component
+* Implementation milestone
+* Source files
+* Test cases
+* Current status
+* Verification evidence
+
+Do not mark a requirement complete merely because code exists. It is complete only when it has passing verification evidence.
+
+## 5. Repository organization
+
+Use a maintainable monorepo unless the existing repository establishes another justified architecture.
+
+The expected logical layout is:
+
+* `apps/web`
+* `services/api`
+* `services/workflow`
+* `services/agents`
+* `services/repository`
+* `services/indexer`
+* `services/sandbox`
+* `services/evaluation`
+* `packages/contracts`
+* `packages/config`
+* `packages/ui`
+* `infra/helm`
+* `infra/argocd`
+* `infra/terraform`
+* `tests/unit`
+* `tests/contract`
+* `tests/integration`
+* `tests/e2e`
+* `tests/security`
+* `tests/resilience`
+* `tests/performance`
+* `tests/evaluation`
+* `docs/adr`
+* `docs/runbooks`
+
+You may change this layout when the repository or architecture requires it, but document the reason in an ADR.
+
+## 6. Engineering rules
+
+Apply these rules throughout implementation:
+
+* TypeScript strict mode must remain enabled.
+* Python code must be fully type-checked.
+* Public functions and services must have clear contracts.
+* Domain logic must be separated from framework and provider integrations.
+* GitHub, GitLab, model providers, storage and sandbox runtimes must use adapter interfaces.
+* External side effects must be idempotent.
+* Long-running work must be resumable.
+* Approval records must be bound to immutable artifact digests.
+* No agent or model output may directly authorize an action.
+* Repository content must be treated as untrusted input.
+* Secrets must never be written to logs, prompts, patches, test snapshots or build artifacts.
+* Database schema changes must use versioned migrations.
+* Production migrations must follow expand-migrate-contract.
+* API changes must be backward-compatible within the documented compatibility window.
+* Use structured logs and correlation identifiers.
+* Add OpenTelemetry traces and Prometheus metrics to every service.
+* Avoid unnecessary abstractions, but do not couple domain logic to infrastructure providers.
+* Do not suppress type, lint, test or security failures without documented justification.
+* Do not delete or weaken existing tests to make the build pass.
+* Do not add TODO placeholders for mandatory requirements.
+* Do not use mutable production image tags.
+
+## 7. Required implementation phases
+
+Implement the system incrementally. Complete and verify each phase before advancing.
+
+### Phase 0: Engineering foundations
+
+Implement:
+
+* Monorepo and workspace configuration
+* Reproducible development environment
+* Formatting, linting and type checking
+* Dependency locking
+* Pre-commit checks
+* CI pipeline
+* Configuration validation
+* PostgreSQL and Alembic foundations
+* OIDC authentication
+* Tenant isolation
+* Roles and authorization
+* Immutable audit events
+* OpenTelemetry foundations
+* Local development environment
+* Kubernetes and Helm foundations
+
+Exit criteria:
+
+* The development environment starts using documented commands.
+* Unit and integration test infrastructure runs successfully.
+* Tenant-isolation tests pass.
+* CI runs formatting, linting, type checks, tests and security scans.
+* No secrets are committed.
+
+### Phase 1: Repository intelligence
+
+Implement:
+
+* GitHub and GitLab provider adapters
+* Repository registration
+* Immutable commit resolution
+* Repository mirror and isolated worktrees
+* File browser
+* Source viewer
+* Lexical search
+* tree-sitter parsing
+* LSP symbol indexing
+* Symbol definitions and references
+* Commit-scoped semantic chunks
+* pgvector embeddings
+* Hybrid search
+* Index freshness and incremental re-indexing
+
+Exit criteria:
+
+* A real test repository can be connected.
+* Users can browse and search the repository.
+* Search never mixes data from different commits.
+* Indexing and retrieval evaluations meet documented thresholds.
+
+### Phase 2: Requirements and planning
+
+Implement:
+
+* Requirement creation and immutable revisions
+* Acceptance-criteria generation
+* Clarification workflow
+* Traceability links
+* Product analyst agent
+* Architect agent
+* Dependency-aware implementation plans
+* Work-package decomposition
+* Budget estimation
+* Temporal workflow lifecycle
+* LangGraph state persistence
+* Pause, resume, cancel and retry
+* Human plan-approval interrupts
+* Live execution graph and event stream
+
+Exit criteria:
+
+* A requirement produces structured acceptance criteria and a plan.
+* Every plan references repository evidence.
+* An interrupted run resumes without losing completed work.
+* Approval-waiting workflows consume no model resources.
+
+### Phase 3: Sandboxed code generation
+
+Implement:
+
+* Sandbox controller
+* Rootless execution profile
+* Firecracker runtime adapter
+* Default-deny network policy
+* Resource limits
+* Runtime secret injection
+* Per-package worktrees
+* Write-scope enforcement
+* Coding agent
+* Patch generation
+* Content-addressed patch storage
+* Patch integration
+* Conflict detection
+* Monaco diff viewer
+
+Exit criteria:
+
+* Coding work executes in isolation.
+* Out-of-scope writes and path traversal are blocked.
+* The patch digest is reproducible.
+* Multiple work packages integrate deterministically.
+* Sandbox security regression tests pass.
+
+### Phase 4: Testing and security
+
+Implement:
+
+* Test discovery
+* Unit-test generation
+* Integration-test generation
+* Playwright browser-test generation
+* Mutation testing
+* Changed-line and branch coverage
+* Flaky-test detection
+* SAST
+* Dependency scanning
+* Secret scanning
+* Container and IaC scanning
+* SBOM creation
+* SARIF normalization
+* Finding deduplication and triage
+* Prompt-injection defenses
+* Security agent
+* Test agent
+
+Exit criteria:
+
+* Baseline and patched test results are distinguishable.
+* Security findings contain reproducible evidence.
+* Prompt injection from repository content cannot modify system policy.
+* Mandatory findings block progression.
+* Test weakening and unauthorized test deletion are detected.
+
+### Phase 5: Review and pull requests
+
+Implement:
+
+* Reviewer agent
+* Integrated review dashboard
+* Inline and threaded review comments
+* Exact-artifact approval requests
+* Separation of duties
+* Approval expiry
+* Stale-approval invalidation
+* Draft pull-request preparation
+* GitHub and GitLab PR adapters
+* PR status synchronization
+* Webhook validation
+* Periodic reconciliation
+
+Exit criteria:
+
+* A PR cannot be created without a valid human approval.
+* A changed patch invalidates its previous approval.
+* An approval cannot be replayed across runs, repositories, actions or environments.
+* Duplicate PR requests create only one PR.
+* Branch protection and required provider checks remain authoritative.
+
+### Phase 6: Deployment and rollback
+
+Implement:
+
+* Release agent
+* Release-plan schema
+* Migration plan
+* Compatibility window
+* Rolling, canary and blue/green strategies
+* Argo CD integration
+* Immutable deployment artifact selection
+* Deployment approval
+* Rollout monitoring
+* Health and SLO gates
+* Rollback proposal
+* Distinct rollback approval
+* Post-rollback verification
+
+Exit criteria:
+
+* PR approval cannot authorize deployment.
+* Deployment approval cannot authorize rollback.
+* Production deployments use immutable artifacts.
+* A staging canary and rollback rehearsal pass.
+* Database rollback limitations are explicitly reported.
+
+### Phase 7: Evaluation and production readiness
+
+Implement:
+
+* Evaluation datasets and cases
+* Patch-correctness evaluation
+* Accepted-change reporting
+* Regression reporting
+* Security recall evaluation
+* Test-quality and mutation evaluation
+* Requirement-coverage evaluation
+* Interrupted-run recovery evaluation
+* Cost, token and latency dashboards
+* Load testing
+* Chaos and resilience testing
+* Backup and restoration
+* Disaster-recovery validation
+* Operational runbooks
+
+Exit criteria:
+
+* Published SLOs pass at the target load.
+* RPO and RTO are demonstrated.
+* No critical unresolved security finding exists.
+* All mandatory SRS requirements have verification evidence.
+* The complete staging workflow succeeds end to end.
+
+## 8. Testing requirements
+
+For every implementation milestone, create and run applicable:
+
+* Unit tests
+* Property-based tests
+* Contract tests
+* Database tests
+* Tenant-isolation tests
+* Integration tests
+* Browser tests
+* Accessibility tests
+* Mutation tests
+* Security tests
+* Provider-adapter tests
+* Workflow replay tests
+* Idempotency tests
+* Approval-confusion tests
+* Prompt-injection tests
+* Sandbox escape tests
+* Failure-injection tests
+* Performance tests
+
+Test real behavior. Do not create tests that only check whether a component renders or a mocked method was called when the underlying behavior is important.
+
+Use mocks at external boundaries, but verify provider adapters against contract servers or dedicated test organizations.
+
+Every defect fixed during implementation must receive a regression test.
+
+## 9. Security requirements
+
+Threat-model the platform before exposing execution functionality.
+
+At minimum, test:
+
+* Cross-tenant access
+* Horizontal and vertical privilege escalation
+* Stale-session approval
+* Self-approval when separation of duties applies
+* Approval replay
+* Digest substitution
+* Webhook spoofing and replay
+* Prompt injection in source files, documentation, tests and issue content
+* Symlink and path traversal
+* Malicious package installation
+* Sandbox network escape
+* Secret leakage
+* Log injection
+* XSS in repository content
+* SSRF
+* Command injection
+* Unsafe deserialization
+* Artifact tampering
+* Dependency confusion
+* Compromised or unsigned container images
+
+Fail closed when authorization, policy, signature, digest or approval verification cannot be completed.
+
+## 10. Deployment deliverables
+
+Provide a complete local deployment and a production-style Kubernetes deployment.
+
+Required local commands should be exposed through a Makefile, Taskfile or equivalent:
+
+* `make bootstrap`
+* `make dev-infra`
+* `make dev`
+* `make format`
+* `make lint`
+* `make typecheck`
+* `make test`
+* `make test-unit`
+* `make test-integration`
+* `make test-e2e`
+* `make test-security`
+* `make test-mutation`
+* `make verify`
+* `make build`
+* `make deploy-local`
+* `make smoke-test`
+* `make backup`
+* `make restore`
+* `make rollback`
+
+If a command is not applicable, provide the equivalent and document it.
+
+Supply:
+
+* `.env.example` containing safe placeholders only
+* Local development configuration
+* Docker or Podman development setup
+* Kubernetes manifests or Helm charts
+* Argo CD Applications
+* Infrastructure modules
+* Network policies
+* Pod security configuration
+* Resource requests and limits
+* Horizontal autoscaling
+* Pod disruption budgets
+* Database migration jobs
+* Backup and restore jobs
+* Monitoring dashboards
+* Alert rules
+* Synthetic smoke tests
+
+## 11. Required documentation
+
+Create and maintain:
+
+* Root `README.md`
+* Developer setup guide
+* Architecture guide
+* API guide
+* Agent architecture guide
+* Security architecture
+* Threat model
+* Data model and ERD
+* Deployment guide
+* Kubernetes operations guide
+* Migration guide
+* Rollback guide
+* Backup and restoration guide
+* Disaster-recovery guide
+* Troubleshooting guide
+* User guide
+* Administrator guide
+* Provider integration guide
+* Evaluation guide
+* Cost-control guide
+* Incident-response runbooks
+* Architecture Decision Records
+* Compatibility matrix
+* Requirement traceability matrix
+* Known limitations
+* Release notes
+
+Commands in documentation must be executable and verified.
+
+## 12. Progress reporting
+
+At the start of each milestone, report:
+
+* Scope
+* Assumptions
+* Files expected to change
+* Risks
+* Verification plan
+
+At the end of each milestone, report:
+
+* Functionality implemented
+* Files changed
+* Migrations added
+* Tests added
+* Commands executed
+* Test results
+* Coverage and mutation results
+* Security findings
+* Remaining limitations
+* Updated requirement traceability
+* Recommended next milestone
+
+Do not claim a test passed unless you executed it and observed a successful result.
+
+Do not claim a requirement is implemented unless its acceptance evidence exists.
+
+## 13. Handling blockers
+
+When blocked:
+
+1. Explain the exact blocker.
+2. Show the command or operation that failed.
+3. Identify the root cause if known.
+4. Attempt safe, relevant remediation.
+5. Do not disable security or quality controls to continue.
+6. Ask me only when a consequential decision or permission is required.
+
+If external credentials are unavailable, implement and test the provider adapter using a local contract server, document the remaining live verification step, and continue with work that does not require the credential.
+
+## 14. Definition of complete
+
+The project is complete only when:
+
+* All mandatory SRS requirements are implemented.
+* The traceability matrix links every requirement to code and passing evidence.
+* The complete system runs locally using documented commands.
+* The production-style Kubernetes deployment succeeds in staging.
+* Unit, contract, integration and browser tests pass.
+* Mutation testing meets the agreed threshold.
+* Security scanning passes without unapproved critical or high findings.
+* Tenant isolation and approval security tests pass.
+* The end-to-end requirement-to-PR workflow succeeds.
+* The separately approved deployment workflow succeeds in staging.
+* The separately approved rollback workflow succeeds in staging.
+* Dashboards, alerts, backups and restoration are verified.
+* Required documentation and runbooks are complete.
+* No mandatory functionality is represented by a placeholder or mock-only implementation.
+* Known limitations are explicitly documented.
+
+## 15. Start now
+
+Begin by reading the attached SRS and inspecting the repository.
+
+Do not start implementation until you have produced:
+
+1. Repository assessment
+2. Requirement traceability matrix
+3. Milestone implementation plan
+4. Risk register
+5. Threat-model outline
+6. Proposed compatibility matrix
+7. List of consequential questions requiring my decision
+
+If no consequential question blocks Phase 0, begin Phase 0 after presenting the plan.
+
+Continue working autonomously within the approved scope. Stop only for:
+
+* A consequential product or architecture decision
+* Required credentials or permissions
+* A destructive operation not already authorized
+* A security or compliance risk requiring human acceptance
+* Human approval gates explicitly required by the SRS

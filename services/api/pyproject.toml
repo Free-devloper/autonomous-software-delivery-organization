@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling==1.31.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "asdo-api"
+version = "0.1.0"
+description = "Versioned HTTP API for the Autonomous Software Delivery Organization."
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "alembic==1.19.1",
+    "asyncpg==0.31.0",
+    "fastapi==0.141.1",
+    "httpx==0.28.1",
+    "opentelemetry-api==1.44.0",
+    "opentelemetry-exporter-otlp-proto-http==1.44.0",
+    "opentelemetry-sdk==1.44.0",
+    "prometheus-client==0.26.0",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.15.0",
+    "pyjwt[crypto]==2.13.0",
+    "sqlalchemy==2.0.52",
+    "uvicorn==0.52.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx==0.28.1",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.16.3",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/autonomous_sdo_api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+markers = [
+    "unit: fast isolated tests for API and persistence behavior",
+    "integration: tests that require a running PostgreSQL service",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["autonomous_sdo_api"]

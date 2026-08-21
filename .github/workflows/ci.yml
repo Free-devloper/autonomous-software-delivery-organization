@@ -1,0 +1,79 @@
+name: Continuous integration
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality and unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - name: Set up uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+      - name: Install Python dependencies
+        run: uv sync --frozen --all-groups --all-packages --all-extras
+      - name: Run Phase 0 quality gates
+        run: pnpm verify
+      - name: Run Phase 0B database gates
+        run: pnpm test:integration
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Scan repository files for prohibited secrets
+        run: node scripts/check-no-secrets.mjs
+
+  codeql:
+    name: CodeQL
+    if: ${{ vars.ENABLE_CODEQL == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@b14c7811d99f9972fdf29f4247b2cde20f3df329 # v4.35.0
+        with:
+          languages: javascript-typescript, python
+          build-mode: none
+      - name: Analyze source
+        uses: github/codeql-action/analyze@b14c7811d99f9972fdf29f4247b2cde20f3df329 # v4.35.0

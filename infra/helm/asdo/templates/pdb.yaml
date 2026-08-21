@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "asdo.fullname" . }}-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "api") | indent 6 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "asdo.fullname" . }}-web
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "web") | indent 6 }}

@@ -1,0 +1,18 @@
+.git
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.tools
+.venv
+coverage
+node_modules
+**/node_modules
+*.log
+
+# Keep generated build artifacts used by the runtime-only Dockerfiles.
+!apps/web/.next
+!dist
+!apps/web/.next/standalone
+!apps/web/.next/standalone/**
+!apps/web/.next/standalone/**/node_modules
+!apps/web/.next/standalone/**/node_modules/**

@@ -1,0 +1,49 @@
+[project]
+name = "asdo-workspace"
+version = "0.1.0"
+description = "Autonomous Software Delivery Organization Python workspace"
+requires-python = ">=3.13,<3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "mypy==2.3.0",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "ruff==0.16.3",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["services/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers --disable-warnings --maxfail=1"
+markers = [
+  "unit: fast isolated tests for API and persistence behavior",
+  "integration: tests that require a running PostgreSQL service",
+]
+pythonpath = ["services/api/src"]
+testpaths = ["services"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = [".tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "DTZ", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+show_error_codes = true
+pretty = true
+exclude = ["^\\.tools/"]

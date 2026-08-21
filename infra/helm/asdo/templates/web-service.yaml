@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "asdo.fullname" . }}-web
+spec:
+  type: ClusterIP
+  selector:
+{{ include "asdo.componentLabels" (dict "root" . "component" "web") | indent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.web.service.port }}
+      targetPort: http

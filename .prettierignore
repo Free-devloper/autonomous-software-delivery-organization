@@ -1,0 +1,10 @@
+.next
+.tools
+.venv
+coverage
+dist
+infra/helm/asdo/templates
+node_modules
+pnpm-lock.yaml
+uv.lock
+.sandboxes

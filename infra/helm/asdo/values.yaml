@@ -1,0 +1,53 @@
+global:
+  environment: local
+  requireImageDigest: false
+  imagePullPolicy: IfNotPresent
+
+api:
+  replicaCount: 1
+  image:
+    repository: asdo-api
+    tag: local
+    digest: ""
+  service:
+    port: 8000
+  existingSecretName: ""
+  otlpEndpoint: ""
+  env:
+    ASDO_API_ENVIRONMENT: local
+    ASDO_API_SERVICE_NAME: autonomous-sdo-api
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+web:
+  replicaCount: 1
+  image:
+    repository: asdo-web
+    tag: local
+    digest: ""
+  service:
+    port: 3000
+  publicApiBaseUrl: /api/v1
+  env:
+    NEXT_PUBLIC_ASDO_ENVIRONMENT: local
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+otelCollector:
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: 0.159.0
+    digest: sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+  service:
+    otlpHttpPort: 4318
+    healthPort: 13133

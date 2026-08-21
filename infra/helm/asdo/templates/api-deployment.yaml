@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "asdo.fullname" . }}-api
+  labels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "api") | indent 4 }}
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "api") | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "api") | indent 8 }}
+    spec:
+      serviceAccountName: {{ include "asdo.fullname" . }}-api
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: {{ include "asdo.image" (dict "root" . "image" .Values.api.image) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: {{ include "asdo.fullname" . }}-api-config
+            - secretRef:
+                name: {{ required "api.existingSecretName is required for database and OIDC settings" .Values.api.existingSecretName }}
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+{{ toYaml .Values.api.resources | indent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true

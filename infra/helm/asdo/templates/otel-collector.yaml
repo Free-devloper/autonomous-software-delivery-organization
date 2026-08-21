@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "asdo.fullname" . }}-otel-config
+data:
+  collector.yaml: |
+{{ .Files.Get "files/otel-collector.yaml" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "asdo.fullname" . }}-otel-collector
+  labels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "otel-collector") | indent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "otel-collector") | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "asdo.componentLabels" (dict "root" . "component" "otel-collector") | indent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: otel-collector
+          image: {{ include "asdo.image" (dict "root" . "image" .Values.otelCollector.image) }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config=/etc/otelcol-contrib/collector.yaml
+          ports:
+            - name: otlp-http
+              containerPort: 4318
+            - name: health
+              containerPort: 13133
+          livenessProbe:
+            httpGet:
+              path: /
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol-contrib
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "asdo.fullname" . }}-otel-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "asdo.fullname" . }}-otel-collector
+spec:
+  type: ClusterIP
+  selector:
+{{ include "asdo.componentLabels" (dict "root" . "component" "otel-collector") | indent 4 }}
+  ports:
+    - name: otlp-http
+      port: {{ .Values.otelCollector.service.otlpHttpPort }}
+      targetPort: otlp-http
+    - name: health
+      port: {{ .Values.otelCollector.service.healthPort }}
+      targetPort: health

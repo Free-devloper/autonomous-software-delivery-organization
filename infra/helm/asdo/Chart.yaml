@@ -1,0 +1,6 @@
+apiVersion: v2
+name: asdo
+description: Autonomous Software Delivery Organization control-plane foundation
+type: application
+version: 0.1.0
+appVersion: 0.1.0
