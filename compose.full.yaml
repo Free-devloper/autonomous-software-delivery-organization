@@ -1,0 +1,128 @@
+name: asdo-full-stack
+
+services:
+  postgres:
+    image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+    environment:
+      POSTGRES_DB: asdo
+      POSTGRES_INITDB_ARGS: --data-checksums
+      POSTGRES_PASSWORD: asdo-local-only
+      POSTGRES_USER: asdo_migrator
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asdo_migrator -d asdo"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    ports:
+      - "127.0.0.1:55432:5432"
+    shm_size: 256mb
+    volumes:
+      - asdo-postgres-data:/var/lib/postgresql
+
+  opa:
+    image: openpolicyagent/opa:1.19.1@sha256:378b7db7218985444b7bc14f0b0f5b05c864b9481fe470e133654a7fc084072c
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "--log-format=json", "/policies"]
+    healthcheck:
+      test: ["CMD", "/opa", "eval", "true"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    ports:
+      - "127.0.0.1:8181:8181"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    user: "65532:65532"
+    volumes:
+      - ./infra/opa:/policies:ro
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.159.0@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "components"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    ports:
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:13133:13133"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    user: "65532:65532"
+    volumes:
+      - ./infra/otel/collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    image: asdo-api:local
+    environment:
+      ASDO_ENV: development
+      ASDO_DATABASE_URL: postgresql+psycopg://asdo_migrator:asdo-local-only@postgres:5432/asdo
+      ASDO_OPA_URL: http://opa:8181/v1/data/asdo/authz
+      ASDO_OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      ASDO_ENABLE_TELEMETRY: "true"
+      ASDO_LOG_LEVEL: INFO
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request;
+          urllib.request.urlopen(''http://127.0.0.1:8000/health/live'').read()"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: asdo-web:local
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e
+          "fetch(''http://127.0.0.1:3000/api/health'').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+
+volumes:
+  asdo-postgres-data:

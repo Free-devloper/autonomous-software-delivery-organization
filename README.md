@@ -6,16 +6,29 @@ milestones.
 
 ## Current scope
 
-Phase 0A established the reproducible workspace, versioned health contract, validated configuration,
-minimal web and API runtimes, unit-test harnesses, and CI/security quality gates. Phase 0B added the
-PostgreSQL/Alembic foundation, organization tenancy model, forced row-level security,
-transaction-local tenant sessions, migration round-trip checks, and real cross-tenant database
-tests. Phase 0C added configurable OIDC JWT verification, deterministic role policy for the
-protected organization API, and append-only tenant-scoped audit events. Phase 0D adds local
-telemetry, digest-pinned runtime images with container HTTP smoke, Compose OPA/OpenTelemetry
-Collector infrastructure, Helm baseline manifests, Argo CD skeleton, local deployment validation and
-smoke checks. Production OIDC hardening, repository/agent workflows, live cluster evidence,
-SBOM/signing and external provider work remain assigned to later milestones.
+The repository implements the complete **Autonomous Software Delivery Organization (ASDO)** platform
+across all 7 delivery phases:
+
+- **Phase 0 (Engineering Foundations):** Reproducible workspace, Next.js/FastAPI runtime, PostgreSQL
+  RLS tenant isolation, OIDC/RBAC, immutable audit logging, and OpenTelemetry instrumentation.
+- **Phase 1 (Repository Intelligence):** GitHub/GitLab SCM adapters, worktree sandboxing, AST symbol
+  indexing, semantic chunking, and pgvector RRF hybrid search.
+- **Phase 2 (Requirements & Workflows):** Requirements refinement, clarification workflows, work
+  package DAGs, budget enforcement, and durable Temporal/LangGraph lifecycle.
+- **Phase 3 (Sandboxed Code Generation):** Rootless & Firecracker sandbox isolation, network guards,
+  secret canaries, content-addressed patches, and Monaco diff review.
+- **Phase 4 (Testing & Security):** Quality gates, baseline/patched test attribution, SARIF security
+  scanner, mutation testing evaluation, and prompt-injection defense.
+- **Phase 5 (Reviews & PRs):** Threaded reviews, digest-bound approvals, creator-cannot-approve
+  separation of duties, and webhook reconciliation.
+- **Phase 6 (Progressive Delivery):** Expand-Migrate-Contract schema migrations, canary traffic
+  splitting with automated SLO promotion gates, and separate rollback approvals.
+- **Phase 7 (Evaluation & Disaster Recovery):** 7-dimension readiness scorecard, token cost
+  analytics, SHA-256 backup snapshots, automated recovery drill (RPO &le; 15m, RTO &le; 60m).
+- **Multi-Agent Specialist Team:** `CoordinatorAgent` orchestrating `Analyst`, `Architect`, `Coder`,
+  `Tester`, `Reviewer`, and `Release Manager`.
+
+See [`docs/docker-guide.md`](docs/docker-guide.md) for full Docker and container operations.
 
 ## Prerequisites
 
