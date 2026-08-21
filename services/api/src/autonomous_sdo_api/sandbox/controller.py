@@ -1,4 +1,5 @@
 import os
+import tempfile
 from pathlib import Path
 from uuid import UUID
 
@@ -20,7 +21,7 @@ class SandboxController:
     """Multi-tenant sandbox lifecycle manager and security coordinator."""
 
     def __init__(self, base_work_dir: Path | None = None) -> None:
-        self.base_work_dir = base_work_dir or Path(os.getcwd()) / ".sandboxes"
+        self.base_work_dir = base_work_dir or self._resolve_base_dir()
         self._sandboxes: dict[tuple[UUID, str], SandboxDescriptor] = {}
         self._adapters: dict[SandboxProfile, SandboxRuntimeAdapter] = {
             SandboxProfile.ROOTLESS_CONTAINER: RootlessContainerAdapter(
@@ -30,6 +31,19 @@ class SandboxController:
                 self.base_work_dir / "firecracker"
             ),
         }
+
+    @staticmethod
+    def _resolve_base_dir() -> Path:
+        """Resolve sandbox working directory, tolerating read-only root filesystems."""
+        env_dir = os.environ.get("ASDO_SANDBOX_DIR")
+        if env_dir:
+            return Path(env_dir)
+        cwd_dir = Path(os.getcwd()) / ".sandboxes"
+        try:
+            cwd_dir.mkdir(parents=True, exist_ok=True)
+            return cwd_dir
+        except OSError:
+            return Path(tempfile.gettempdir()) / "asdo-sandboxes"
 
     def _get_adapter(self, profile: SandboxProfile) -> SandboxRuntimeAdapter:
         return self._adapters.get(profile, self._adapters[SandboxProfile.ROOTLESS_CONTAINER])

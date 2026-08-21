@@ -21,7 +21,6 @@ class FirecrackerMicroVMAdapter(SandboxRuntimeAdapter):
 
     def __init__(self, base_sandbox_dir: Path | None = None) -> None:
         self.base_sandbox_dir = base_sandbox_dir or Path(os.getcwd()) / ".sandboxes" / "firecracker"
-        self.base_sandbox_dir.mkdir(parents=True, exist_ok=True)
 
     async def provision(self, descriptor: SandboxDescriptor) -> None:
         vm_dir = Path(descriptor.worktree_path)
