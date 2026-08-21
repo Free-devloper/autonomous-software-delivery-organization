@@ -59,6 +59,8 @@ function startContainer(image, port) {
     "run",
     "--detach",
     "--read-only",
+    "--tmpfs",
+    "/tmp",
     "--cap-drop",
     "ALL",
     "--security-opt",
@@ -81,16 +83,25 @@ function removeContainer(containerId) {
 
 function containerHostPort(containerId, port) {
   const output = capture("docker", ["port", containerId, String(port)]);
-  const match = output.match(/127\.0\.0\.1:(\d+)/);
+  const match = output.match(/(?:127\.0\.0\.1|0\.0\.0\.0|\[::\]):(\d+)/u);
   if (!match) {
     throw new Error(`Could not resolve published port ${port} for ${containerId}: ${output}`);
   }
   return match[1];
 }
 
+function getContainerLogs(containerId) {
+  const result = spawnSync("docker", ["logs", containerId], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+    shell: false,
+  });
+  return `${result.stdout ?? ""}\n${result.stderr ?? ""}`.trim();
+}
+
 async function waitForHttp(url, containerId) {
   let lastError = "";
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
       const response = await fetch(url);
       if (response.ok) {
@@ -102,7 +113,7 @@ async function waitForHttp(url, containerId) {
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  const logs = capture("docker", ["logs", containerId]);
+  const logs = getContainerLogs(containerId);
   throw new Error(`Timed out waiting for ${url}: ${lastError}\nContainer logs:\n${logs}`);
 }
 
